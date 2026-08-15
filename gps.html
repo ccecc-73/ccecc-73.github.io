@@ -244,7 +244,7 @@
               table.appendChild(tbody);
               resultDiv.appendChild(table);
               // 设置里程输入框的提示范围
-              document.getElementById('k').placeholder = "范围" + listXY1[0][0] + "--" + Math.round((listXY1[listXY1.length - 1][0] + listXY1[listXY1.length - 1][4]) * 100) / 100
+              document.getElementById('k').placeholder = listXY1[0][0] + "--" + Math.round((listXY1[listXY1.length - 1][0] + listXY1[listXY1.length - 1][4]) * 100) / 100
             });
 
             // ========== K -> XY 计算 ==========
@@ -342,7 +342,7 @@
                   }
                 }
               }
-              document.getElementById('fsk').innerHTML = `反算:路线:${preRoadName}<br><br>at:${LL.num2k(xy2k.k)}${ba==true?"断链之后":""}<br>${xy2k.cs}次<br>宽度=${Math.round(xy2k.b*1000)/1000}<br>`
+              document.getElementById('fsk').innerHTML = `🏠🏠🏠🏠🏠----🏠🏠🏠🏠🏠：<br><br>AT: 👉 ${LL.num2k(xy2k.k)}📍${ba==true?"断链之后":""}<br><br>距中:📈 ${Math.round(xy2k.b*1000)/1000}<br>`
               navigator.vibrate([20]);
               return xy2k
             }
@@ -382,35 +382,44 @@
                     let accuracy = position.coords.accuracy;
                     // GPS坐标转平面坐标（投影）
                     let g = LL.jd.gps2k(lot1, longitude, latitude);
-                    document.getElementById('fsx').value = g.x1;
-                    document.getElementById('fsy').value = g.y1;
+                    document.getElementById('fsx').value = `${g.x1.toFixed(3)}`;
+
+                    document.getElementById('fsy').value = `${g.y1.toFixed(3)}`;
+
                     // 自动反算里程
                     let kinfo = fsk();
                     // 如果超出路线范围，计算偏离距离
                     if (!Number.isFinite(kinfo.b)) {
                       let lb = LL.jd.xy2gps(lot1, kinfo.x, kinfo.y);
                       let dist = LL.jd.lnglatDistance(longitude, latitude, lb.L, lb.B);
-                      document.getElementById('fsk').innerHTML = `超出 <${preRoadName}> 范围:<br>当前${kinfo.b}≈${dist.toFixed(1)}km`
+                      document.getElementById('fsk').innerHTML = `🚫🚫🚫🚫🚫<${preRoadName}> 范围:<br>当前${kinfo.b}≈${dist.toFixed(1)}km`
                     }
-                    locationInfo.innerHTML = `当前gps信息<br>纬度:${latitude}<br>经度:${longitude}<br>精度:${accuracy}`;
+                    locationInfo.innerHTML = `🧭🧭🧭🧭--------🧭🧭🧭🧭<br>纬度:${latitude}<br>经度:${longitude}<br>精度:${accuracy.toFixed(1)}m`;
                     lastUpdateTime = currentTime
                   }
                 }, function(error) {
-                  // 错误处理
-                  switch (error.code) {
-                    case error.PERMISSION_DENIED:
-                      locationInfo.textContent = '您拒绝了位置请求。';
-                      break;
-                    case error.POSITION_UNAVAILABLE:
-                      locationInfo.textContent = '请开启使用gps的 <权限>。';
-                      break;
-                    case error.TIMEOUT:
-                      locationInfo.textContent = '请求位置超时。';
-                      break;
-                    case error.UNKNOWN_ERROR:
-                      locationInfo.textContent = '发生未知错误。';
-                      break
-                  }
+  switch (error.code) {
+    case 1: // PERMISSION_DENIED
+      // 💡 网页端核心：把“权限”和“系统GPS”一起提示
+      locationInfo.textContent = '定位失败：请确保已允许网站获取位置，且手机系统定位(GPS)已打开。';
+      break;
+      
+    case 2: // POSITION_UNAVAILABLE
+      // 💡 针对部分安卓网页没开GPS会走 case 2 的情况
+      locationInfo.textContent = '无法获取位置：请检查手机GPS开关是否开启，或移步到信号较好的地方。';
+      break;
+      
+    case 3: // TIMEOUT
+      locationInfo.textContent = '定位超时：网络信号较弱，请刷新页面重试。';
+      break;
+      
+    default:
+      locationInfo.textContent = '定位失败：发生未知错误。';
+      break;
+  }
+
+
+
                   navigator.geolocation.clearWatch(watchId);
                   toggleButton.textContent = 'gps2K';
                   isWatching = false
